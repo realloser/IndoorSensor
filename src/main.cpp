@@ -31,6 +31,8 @@ float voltage_reference;
 // Light sensor variables
 int lightSensorValue = 0, lightSensorMappedValue = 0;
 
+String transmissionString;
+
 void setup()
 {
   pinMode(VOLTAGE_INPUT, INPUT);
@@ -69,7 +71,15 @@ void loop()
   readDHT();
   readLightSensor();
 
+  // concat all strings
+  // Pattern: temp|humidity|lightintensity|voltage
+  transmissionString  = String(dhtTemp);transmissionString += String("|");
+  transmissionString += String(dhtHum);transmissionString += String("|");
+  transmissionString += String(lightSensorMappedValue);transmissionString += String("|");
+  transmissionString += String(voltage_reference);transmissionString += String("|");
 
+  Serial.println(transmissionString);
+  
   // turn the LED on (HIGH is the voltage level)
   digitalWrite(LED_BUILTIN, HIGH);
   // wait for a second
