@@ -14,12 +14,12 @@
 #define VOLTAGE_DEVIDER_FACTOR 2.355f
 
 // DHT22 Sensor
-#define DHTPIN 8     // what pin we're connected to
+#define DHT_INPUT 8     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 
 #define LIGHT_SENSOR_INPUT 9
 
-DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
+DHT dht(DHT_INPUT, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
 //Variables
 int chk;
 float hum;  //Stores humidity value
