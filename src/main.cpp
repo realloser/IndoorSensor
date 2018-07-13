@@ -17,18 +17,25 @@
 #define DHTPIN 8     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 
+#define LIGHT_SENSOR_INPUT 9
+
 DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
 //Variables
 int chk;
 float hum;  //Stores humidity value
 float temp; //Stores temperature value
 
+// Reference voltage variables
 float voltage_read;
 float voltage_reference;
+
+// Light sensor variables
+int lightSensorValue = 0, lightSensorMappedValue = 0;
 
 void setup()
 {
   pinMode(VOLTAGE_INPUT, INPUT);
+  pinMode(LIGHT_SENSOR_INPUT, INPUT);
   dht.begin();
 
   Serial.begin(9600);
@@ -50,11 +57,18 @@ void readDHT() {
   Serial.print("Temperature: "); Serial.println(temp);
 }
 
+void readLightSensor() {
+  lightSensorValue = analogRead(LIGHT_SENSOR_INPUT); // read the value from the sensor
+  lightSensorMappedValue = map(lightSensorValue, 0, voltage_reference, 0, 5);
+  Serial.print("Light intensity: "); Serial.println(lightSensorMappedValue);
+}
+
 void loop()
 {
 
   readVoltage();
   readDHT();
+  readLightSensor();
 
 
   // turn the LED on (HIGH is the voltage level)
