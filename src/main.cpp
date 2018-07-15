@@ -9,19 +9,31 @@
 #include <DHT.h>
 #include <RFTransmitter.h>
 
-// Voltage devider
+// pins for Attiny85
+#if defined(__AVR_ATtiny84__) || (__AVR_ATtiny2313__) || defined (__AVR_ATtiny85__)
+#define RF_OUTPUT 0
+#define DHT_INPUT 1
+#define LIGHT_SENSOR_INPUT 2
+#define VOLTAGE_INPUT 3
+
+#else
 #define VOLTAGE_INPUT 10
+#define DHT_INPUT 8     // what pin we're connected to
+#define LIGHT_SENSOR_INPUT 9
+#define RF_OUTPUT 6
+
+#endif
+
+// 433 rf
+#define NODE_ID 1
+#define NODE_HASH "B9FC4586"
+
+// Voltage devider
 #define VOLTAGE_DEVIDER_FACTOR 2.355f
 
 // DHT22 Sensor
-#define DHT_INPUT 8     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 
-#define LIGHT_SENSOR_INPUT 9
-
-#define RF_OUTPUT 6
-#define NODE_ID 1
-#define NODE_HASH "B9FC4586"
 
 DHT dht(DHT_INPUT, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
 //Variables
@@ -46,41 +58,41 @@ void setup()
   pinMode(LIGHT_SENSOR_INPUT, INPUT);
   dht.begin();
 
-  Serial.begin(9600);
+  // Serial.begin(9600);
 }
 
 void readVoltage() {
   voltage_read = analogRead(VOLTAGE_INPUT);
-  Serial.print("Voltage int:"); Serial.println(voltage_read);
+  // Serial.print("Voltage int:"); Serial.println(voltage_read);
 
   voltage_reference = (VOLTAGE_DEVIDER_FACTOR*1024)/voltage_read;
-  Serial.print("Voltage Reference :"); Serial.println(voltage_reference);
+  // Serial.print("Voltage Reference :"); Serial.println(voltage_reference);
 }
 
 void readDHT() {
   //Read data and store it to variables hum and temp
   dhtHum = dht.readHumidity();
   dhtTemp= dht.readTemperature();
-  Serial.print("Humitidty:   "); Serial.println(dhtHum);
-  Serial.print("Temperature: "); Serial.println(dhtTemp);
+  // Serial.print("Humitidty:   "); Serial.println(dhtHum);
+  // Serial.print("Temperature: "); Serial.println(dhtTemp);
 }
 
 void readLightSensor() {
   lightSensorValue = analogRead(LIGHT_SENSOR_INPUT); // read the value from the sensor
   lightSensorMappedValue = map(lightSensorValue, 0, voltage_reference, 0, 5);
-  Serial.print("Light intensity: "); Serial.println(lightSensorMappedValue);
+  // Serial.print("Light intensity: "); Serial.println(lightSensorMappedValue);
 }
 
 void sendData(bool resend) {
   if(resend) {
     transmitter.resend((byte *)transmissionMessage, strlen(transmissionMessage) + 1);
-    Serial.println(transmissionMessage);
-    Serial.println("resend message");
+    // Serial.println(transmissionMessage);
+    // Serial.println("resend message");
   }
   else {
     transmitter.send((byte *)transmissionMessage, strlen(transmissionMessage) + 1);
-    Serial.println(transmissionMessage);
-    Serial.println("send message");
+    // Serial.println(transmissionMessage);
+    // Serial.println("send message");
   }
 }
 
@@ -99,13 +111,11 @@ void sendPing() {
   sendData(true);
   delay(500);
   sendData(true);
-  Serial.println("Send ping");
   pingSend = true;
 }
 
 void loop()
 {
-
   sendPing();
 
   readVoltage();
@@ -119,12 +129,11 @@ void loop()
   transmissionString += String(dhtHum);transmissionString += String("|");
   transmissionString += String(lightSensorMappedValue);transmissionString += String("|");
   transmissionString += String(voltage_reference);transmissionString += String("|");
-  // Serial.println(transmissionString);
   transmissionString.toCharArray(transmissionMessage, transmissionString.length() + 1);
 
   sendData(false);
   delay(1000);
   sendData(true);
-  delay(5000);
+  delay(3000);
   sendData(true);
 }
