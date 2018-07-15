@@ -5,9 +5,9 @@
  */
 
 #include <Arduino.h>
-
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
+#include <RFTransmitter.h>
 
 // Voltage devider
 #define VOLTAGE_INPUT 10
@@ -18,6 +18,10 @@
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 
 #define LIGHT_SENSOR_INPUT 9
+
+#define RF_OUTPUT 16
+#define NODE_ID 1
+#define NODE_HASH "B9FC4586"
 
 DHT dht(DHT_INPUT, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
 //Variables
@@ -31,7 +35,9 @@ float voltage_reference;
 // Light sensor variables
 int lightSensorValue = 0, lightSensorMappedValue = 0;
 
+RFTransmitter transmitter(RF_OUTPUT, NODE_ID);
 String transmissionString;
+char transmissionMessage[50];
 
 void setup()
 {
@@ -64,6 +70,15 @@ void readLightSensor() {
   Serial.print("Light intensity: "); Serial.println(lightSensorMappedValue);
 }
 
+void sendData(bool resend) {
+  if(resend) {
+    transmitter.resend((byte *)transmissionMessage, strlen(transmissionMessage) + 1);
+  }
+  else {
+    transmitter.send((byte *)transmissionMessage, strlen(transmissionMessage) + 1);
+  }
+}
+
 void loop()
 {
 
@@ -72,21 +87,18 @@ void loop()
   readLightSensor();
 
   // concat all strings
-  // Pattern: temp|humidity|lightintensity|voltage
-  transmissionString  = String(dhtTemp);transmissionString += String("|");
+  // Pattern: nodeHash|temp|humidity|lightintensity|voltage
+  transmissionString  = String(NODE_HASH);transmissionString += String("|");
+  transmissionString += String(dhtTemp);transmissionString += String("|");
   transmissionString += String(dhtHum);transmissionString += String("|");
   transmissionString += String(lightSensorMappedValue);transmissionString += String("|");
   transmissionString += String(voltage_reference);transmissionString += String("|");
-
   Serial.println(transmissionString);
-  
-  // turn the LED on (HIGH is the voltage level)
-  digitalWrite(LED_BUILTIN, HIGH);
-  // wait for a second
+  transmissionString.toCharArray(transmissionMessage, transmissionString.length() + 1);
+  Serial.println(transmissionMessage);
+  sendData(false);
   delay(1000);
-  // turn the LED off by making the voltage LOW
-  digitalWrite(LED_BUILTIN, LOW);
-   // wait for a second
-  Serial.println("Blink");
-  delay(1000);
+  sendData(true);
+  delay(5000);
+  sendData(true);
 }
