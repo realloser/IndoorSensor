@@ -19,7 +19,7 @@
 
 #define LIGHT_SENSOR_INPUT 9
 
-#define RF_OUTPUT 16
+#define RF_OUTPUT 6
 #define NODE_ID 1
 #define NODE_HASH "B9FC4586"
 
@@ -37,7 +37,8 @@ int lightSensorValue = 0, lightSensorMappedValue = 0;
 
 RFTransmitter transmitter(RF_OUTPUT, NODE_ID);
 String transmissionString;
-char transmissionMessage[50];
+char transmissionMessage[30];
+bool pingSend;
 
 void setup()
 {
@@ -73,14 +74,39 @@ void readLightSensor() {
 void sendData(bool resend) {
   if(resend) {
     transmitter.resend((byte *)transmissionMessage, strlen(transmissionMessage) + 1);
+    Serial.println(transmissionMessage);
+    Serial.println("resend message");
   }
   else {
     transmitter.send((byte *)transmissionMessage, strlen(transmissionMessage) + 1);
+    Serial.println(transmissionMessage);
+    Serial.println("send message");
   }
+}
+
+void sendPing() {
+  if (pingSend) {
+    return;
+  }
+
+  transmissionString = String(NODE_HASH);
+  transmissionString += String("-");
+  transmissionString += String("ping");
+  transmissionString.toCharArray(transmissionMessage, transmissionString.length() + 1);
+
+  sendData(false);
+  delay(500);
+  sendData(true);
+  delay(500);
+  sendData(true);
+  Serial.println("Send ping");
+  pingSend = true;
 }
 
 void loop()
 {
+
+  sendPing();
 
   readVoltage();
   readDHT();
@@ -93,9 +119,9 @@ void loop()
   transmissionString += String(dhtHum);transmissionString += String("|");
   transmissionString += String(lightSensorMappedValue);transmissionString += String("|");
   transmissionString += String(voltage_reference);transmissionString += String("|");
-  Serial.println(transmissionString);
+  // Serial.println(transmissionString);
   transmissionString.toCharArray(transmissionMessage, transmissionString.length() + 1);
-  Serial.println(transmissionMessage);
+
   sendData(false);
   delay(1000);
   sendData(true);
